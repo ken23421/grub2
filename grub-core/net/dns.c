@@ -276,14 +276,25 @@ recv_hook (grub_net_udp_socket_t sock __attribute__ ((unused)),
       ptr++;
       ptr += 4;
     }
-  *data->addresses = grub_malloc (sizeof ((*data->addresses)[0])
-				 * grub_be_to_cpu16 (head->ancount));
-  if (!*data->addresses)
+
+  if (ALIGN_UP (grub_be_to_cpu16 (head->ancount) + *data->naddresses, 4) > ALIGN_UP (*data->naddresses, 4))
     {
-      grub_errno = GRUB_ERR_NONE;
-      grub_netbuff_free (nb);
-      return GRUB_ERR_NONE;
+      grub_net_network_level_address_t *old_addresses = *data->addresses;
+      *data->addresses = grub_malloc (sizeof ((*data->addresses)[0])
+				 * ALIGN_UP (grub_be_to_cpu16 (head->ancount) + *data->naddresses, 4));
+      if (!*data->addresses)
+	{
+	  grub_errno = GRUB_ERR_NONE;
+	  grub_netbuff_free (nb);
+	  return GRUB_ERR_NONE;
+	}
+      if (*data->naddresses)
+	{
+	  grub_memcpy (*data->addresses, old_addresses, sizeof ((*data->addresses)[0]) * (*data->naddresses));
+	  grub_free (old_addresses);
+	}
     }
+
   reparse_ptr = ptr;
  reparse:
   for (i = 0, ptr = reparse_ptr; i < grub_be_to_cpu16 (head->ancount); i++)
