@@ -518,6 +518,7 @@ grub_efinet_create_dhcp_ack_from_device_path (grub_efi_device_path_t *dp, int *u
 	}
       grub_memcpy (bp->boot_file, uri_dp->uri, uri_len);
       grub_memcpy (&bp->your_ip, ipv4->local_ip_address, sizeof (bp->your_ip));
+      grub_memcpy (&bp->subnet_mask, ipv4->subnet_mask, sizeof (bp->subnet_mask));
       grub_memcpy (&bp->server_ip, ipv4->remote_ip_address, sizeof (bp->server_ip));
 
       bp->vendor[0] = GRUB_NET_BOOTP_RFC1048_MAGIC_0;

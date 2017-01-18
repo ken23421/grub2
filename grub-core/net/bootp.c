@@ -26,6 +26,9 @@
 #include <grub/datetime.h>
 #include <grub/time.h>
 #include <grub/list.h>
+#ifdef GRUB_MACHINE_EFI
+#include <grub/efi/http.h>
+#endif
 
 static int
 dissect_url (const char *url, char **proto, char **host, char **path)
@@ -338,6 +341,9 @@ grub_net_configure_by_dhcp_ack (const char *name,
 	    }
 	  else
 	    grub_errno = GRUB_ERR_NONE;
+#ifdef GRUB_MACHINE_EFI
+          grub_efihttp_configure (card, bp);
+#endif
 
 	  grub_free (proto);
 	  grub_free (ip);

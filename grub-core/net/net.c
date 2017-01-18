@@ -32,6 +32,9 @@
 #include <grub/loader.h>
 #include <grub/bufio.h>
 #include <grub/kernel.h>
+#ifdef GRUB_MACHINE_EFI
+#include <grub/efi/http.h>
+#endif
 
 GRUB_MOD_LICENSE ("GPLv3+");
 
@@ -1499,7 +1502,12 @@ grub_net_fs_open (struct grub_file *file_out, const char *name)
       return grub_errno;
     }
 
-  err = file->device->net->protocol->open (file, name);
+#ifdef GRUB_MACHINE_EFI
+  if (grub_efihttp)
+      err =  grub_efihttp_open (file, name);
+  else
+#endif
+      err = file->device->net->protocol->open (file, name);
   if (err)
     {
       while (file->device->net->packs.first)
@@ -1538,7 +1546,12 @@ grub_net_fs_close (grub_file_t file)
       grub_netbuff_free (file->device->net->packs.first->nb);
       grub_net_remove_packet (file->device->net->packs.first);
     }
-  file->device->net->protocol->close (file);
+#ifdef GRUB_MACHINE_EFI
+  if (grub_efihttp)
+      grub_efihttp_close (file);
+  else
+#endif
+      file->device->net->protocol->close (file);
   grub_free (file->device->net->name);
   return GRUB_ERR_NONE;
 }
@@ -1769,6 +1782,25 @@ grub_net_seek_real (struct grub_file *file, grub_off_t offset)
 static grub_ssize_t
 grub_net_fs_read (grub_file_t file, char *buf, grub_size_t len)
 {
+#ifdef GRUB_MACHINE_EFI
+  if (grub_efihttp)
+  {
+      /* adjust the offset */
+      if (file->offset > file->device->net->offset)
+      {
+          grub_efihttp_read (file, NULL, (file->offset - file->device->net->offset));
+      }
+      else if (file->offset < file->device->net->offset)
+      {
+          grub_efihttp_close (file);
+          grub_efihttp_open (file, file->device->net->name);
+          if (file->offset)
+              grub_efihttp_read (file, NULL, file->offset);
+      }
+
+      return grub_efihttp_read (file, buf, len);
+  }
+#endif
   if (file->offset != file->device->net->offset)
     {
       grub_err_t err;

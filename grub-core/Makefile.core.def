@@ -2140,6 +2140,7 @@ module = {
   common = net/ethernet.c;
   common = net/arp.c;
   common = net/netbuff.c;
+  efi = net/drivers/efi/efihttp.c;
 };
 
 module = {

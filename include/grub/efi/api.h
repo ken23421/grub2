@@ -982,6 +982,23 @@ struct grub_efi_bios_device_path
 } GRUB_PACKED;
 typedef struct grub_efi_bios_device_path grub_efi_bios_device_path_t;
 
+/* Service Binding definitions */
+struct grub_efi_service_binding;
+
+typedef grub_efi_status_t
+(*grub_efi_service_binding_create_child) (struct grub_efi_service_binding *this,
+                                          grub_efi_handle_t *child_handle);
+
+typedef grub_efi_status_t
+(*grub_efi_service_binding_destroy_child) (struct grub_efi_service_binding *this,
+                                           grub_efi_handle_t *child_handle);
+
+typedef struct grub_efi_service_binding
+{
+  grub_efi_service_binding_create_child create_child;
+  grub_efi_service_binding_destroy_child destroy_child;
+} grub_efi_service_binding_t;
+
 struct grub_efi_open_protocol_information_entry
 {
   grub_efi_handle_t agent_handle;

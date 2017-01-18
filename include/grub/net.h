@@ -434,6 +434,7 @@ struct grub_net_bootp_packet
   grub_uint16_t flags;
   grub_uint32_t	client_ip;
   grub_uint32_t your_ip;
+  grub_uint32_t subnet_mask;
   grub_uint32_t	server_ip;
   grub_uint32_t	gateway_ip;
   grub_net_bootp_mac_addr_t mac_addr;
