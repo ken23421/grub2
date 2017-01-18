@@ -1656,6 +1656,9 @@ static void
 grub_net_poll_cards_idle_real (void)
 {
   struct grub_net_card *card;
+#ifdef GRUB_MACHINE_EFI
+  if (grub_efihttp) return;
+#endif
   FOR_NET_CARDS (card)
   {
     grub_uint64_t ctime = grub_get_time_ms ();
