@@ -117,13 +117,14 @@ grub_efihttp_open (grub_file_t file, const char *filename)
   grub_efi_boot_services_t *b = grub_efi_system_table->boot_services;
   grub_efi_status_t status;
   grub_efi_http_status_code_t http_status;
-  const char *http = "http://";
+  char *protocol;
   char *url;
   grub_efi_char16_t *usc2_url;
   grub_uint32_t url_len, usc2_url_len;
   grub_uint32_t offset, length, i;
 
-  grub_dprintf ("efihttp", "Enter grub_efihttp_open(), file->name:%s\n", file->name);
+  grub_dprintf ("efihttp", "Enter grub_efihttp_open(), file->name:%s, file->device->net->protocol->name:%s\n", 
+                           file->name, file->device->net->protocol->name);
   grub_dprintf ("efihttp", "grub_efihttp:%p, grub_efihttp->request:%p\n", grub_efihttp, grub_efihttp->request);
 
   /* init */
@@ -137,20 +138,21 @@ grub_efihttp_open (grub_file_t file, const char *filename)
   request_data.method = GRUB_EFI_HTTPMETHODGET;
 
   /* url */
-  url_len = grub_strlen (http) + grub_strlen (file->device->net->server) + grub_strlen (file->device->net->name);
-  url = grub_malloc ((url_len + 1) * sizeof (url[0]));
+  protocol = grub_zalloc (grub_strlen(file->device->net->protocol->name) + 4);
+  grub_strncpy (protocol, file->device->net->protocol->name, grub_strlen (file->device->net->protocol->name));
+  grub_strncpy (protocol + grub_strlen (file->device->net->protocol->name), "://", 3);
+  url_len = grub_strlen (protocol) + grub_strlen (file->device->net->server) + grub_strlen (file->device->net->name);
+  url = grub_zalloc ((url_len + 1) * sizeof (url[0]));
   grub_memset (url, 0, url_len);
-  grub_strncpy (url, http, grub_strlen(http));
-  offset = grub_strlen (http);
+  grub_strncpy (url, protocol, grub_strlen (protocol));
+  offset = grub_strlen (protocol);
   grub_strncpy (url + offset, file->device->net->server, grub_strlen (file->device->net->server));
   offset += grub_strlen (file->device->net->server);
   grub_strncpy (url + offset, file->device->net->name, grub_strlen (file->device->net->name));
-  url[url_len] = 0;
   grub_dprintf ("efihttp", "url:%s\n", url);
   usc2_url_len = url_len * GRUB_MAX_UTF16_PER_UTF8;
-  usc2_url = grub_malloc ((usc2_url_len + 1) * sizeof (usc2_url[0]));
+  usc2_url = grub_zalloc ((usc2_url_len + 1) * sizeof (usc2_url[0]));
   usc2_url_len = grub_utf8_to_utf16 (usc2_url, usc2_url_len, (grub_uint8_t *)url, url_len, NULL); /* convert string format from ascii to usc2 */
-  usc2_url[usc2_url_len] = 0;
   request_data.url = usc2_url;
 
   /* headers */

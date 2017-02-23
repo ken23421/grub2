@@ -1270,7 +1270,7 @@ struct grub_net_socket *grub_net_sockets;
 static grub_net_t
 grub_net_open_real (const char *name)
 {
-  grub_net_app_level_t proto;
+  grub_net_app_level_t proto = NULL;
   const char *protname, *server;
   char *host;
   grub_size_t protnamelen;
@@ -1378,6 +1378,36 @@ grub_net_open_real (const char *name)
     {
       return NULL;
     }
+
+  grub_dprintf ("net", "protname:%s\n", protname);
+  if (grub_efihttp)
+  {
+      const char *comma;
+      comma = grub_strchr (protname, ',');
+      if (grub_strncmp (protname, "https", comma - protname) == 0
+          || grub_strncmp (protname, "http", comma - protname) == 0)
+      {
+          proto = grub_zalloc (sizeof (*proto));
+          proto->name = grub_strndup (protname, comma - protname);
+      }
+      
+      if (proto)
+      {
+          grub_net_t ret = grub_zalloc (sizeof (*ret));
+          if (!ret)
+          {
+              grub_free (host);
+              return NULL;
+          }
+          ret->protocol = proto;
+          ret->port = port;
+          ret->server = host;
+          ret->fs = &grub_net_fs;
+          grub_dprintf ("net", "Leave grub_net_open_real() with ret->protocol:%p, ret->port:%d, ret->server:%s, ret->fs:%p\n",
+                                ret->protocol, ret->port, ret->server, ret->fs);
+          return ret;
+      }
+  }
 
   for (try = 0; try < 2; try++)
     {
